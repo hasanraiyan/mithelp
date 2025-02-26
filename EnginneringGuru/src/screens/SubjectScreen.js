@@ -12,23 +12,26 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
-import data from '../data/data.json'; // Adjust path as needed
+// Remove this line: import data from '../data/data.json'; // No longer needed
 
 const { width } = Dimensions.get('window');
 
 const SubjectScreen = ({ route, navigation }) => {
-  const { branch = 'default', semester } = route.params || {};
-  const branchData = data.branches.find(b => b.name === branch) || {};
-  const semesterData = branchData.semesters?.find(s => s.name === semester) || {};
-  const subjects = semesterData.subjects || [];
+  console.log('route.params in SubjectScreen:', route.params); // ADDED LOG FOR DEBUGGING
+  const { branch = 'default', semester, data } = route.params || {}; // Receive 'data' from route.params
+  const branchData = data?.branches?.find(b => b.name === branch) || {}; // Use optional chaining
+  const semesterData = branchData?.semesters?.find(s => s.name === semester) || {}; // Use optional chaining
+  const subjects = semesterData?.subjects || []; // Use optional chaining
 
   const headerAnimation = useRef(new Animated.Value(0)).current;
   const animatedValues = useRef(subjects.map(() => new Animated.Value(0))).current;
 
-  const branchIcons = Object.fromEntries(data.branches.map(b => [b.name, b.icon]));
+  const branchIcons = Object.fromEntries(
+    data?.branches?.map(b => [b.name, b.icon]) || [] // Use optional chaining and default to empty array
+  );
   const branchIcon = branchIcons[branch] || 'graduation-cap';
 
-  const getBranchColor = () => branchData.gradientColors || ['#1976D2', '#42a5f5'];
+  const getBranchColor = () => branchData?.gradientColors || ['#1976D2', '#42a5f5']; // Use optional chaining
   const branchColor = getBranchColor();
 
   useEffect(() => {
@@ -131,7 +134,7 @@ const SubjectScreen = ({ route, navigation }) => {
               key={subject.name}
               subject={subject}
               animatedValue={animatedValues[index]}
-              onPress={() => navigation.navigate('Syllabus', { branch, semester, subject: subject.name })}
+              onPress={() => navigation.navigate('Syllabus', { branch, semester, subject: subject.name, data: data })} // Pass data to next screen if needed
             />
           ))}
         </View>
@@ -139,7 +142,6 @@ const SubjectScreen = ({ route, navigation }) => {
     </SafeAreaView>
   );
 };
-
 
 
 const styles = StyleSheet.create({

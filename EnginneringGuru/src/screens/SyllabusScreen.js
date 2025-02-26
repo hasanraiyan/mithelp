@@ -7,25 +7,26 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
-  
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Markdown from 'react-native-markdown-display';
-import data from '../data/data.json'; 
+// Remove this line: import data from '../data/data.json';
 
 const SyllabusScreen = ({ route, navigation }) => {
-  const { branch, semester, subject } = route.params;
+  console.log('route.params in SyllabusScreen:', route.params); // ADDED LOG FOR DEBUGGING
+  const { branch, semester, subject, data } = route.params; // Receive 'data' from route.params
 
-  const branchData = data.branches.find(b => b.name === branch) || {};
-  const semesterData = branchData.semesters?.find(s => s.name === semester) || {};
-  const subjectData = semesterData.subjects?.find(sub => sub.name === subject) || {};
-  const syllabus = subjectData.syllabus || {};
+  const branchData = data?.branches?.find(b => b.name === branch) || {}; // Use optional chaining
+  const semesterData = branchData?.semesters?.find(s => s.name === semester) || {}; // Use optional chaining
+  const subjectData = semesterData?.subjects?.find(sub => sub.name === subject) || {}; // Use optional chaining
+  const syllabus = subjectData?.syllabus || {}; // Use optional chaining
 
-  const branchIcons = Object.fromEntries(data.branches.map(b => [b.name, b.icon]));
+  const branchIcons = Object.fromEntries(
+    data?.branches?.map(b => [b.name, b.icon]) || [] // Use optional chaining and default to empty array
+  );
   const branchIcon = branchIcons[branch] || 'graduation-cap';
-
-  const getBranchColor = () => branchData.gradientColors || ['#1976D2', '#42a5f5'];
+  const getBranchColor = () => branchData?.gradientColors || ['#1976D2', '#42a5f5']; // Use optional chaining
   const branchColor = getBranchColor();
 
   const allSyllabusSectionsConfig = [
@@ -41,7 +42,7 @@ const SyllabusScreen = ({ route, navigation }) => {
   ];
 
   const syllabusSectionsData = allSyllabusSectionsConfig.filter(sectionConfig => {
-    const content = syllabus[sectionConfig.contentKey];
+    const content = syllabus?.[sectionConfig.contentKey]; // Use optional chaining
     if (sectionConfig.contentKey === 'courseContent') {
       return typeof content === 'string' && content.trim() !== '';
     } else {
@@ -50,7 +51,7 @@ const SyllabusScreen = ({ route, navigation }) => {
   }).map(sectionConfig => ({
     title: sectionConfig.title,
     icon: sectionConfig.icon,
-    content: syllabus[sectionConfig.contentKey] || (sectionConfig.contentKey === 'courseContent' ? '' : [])
+    content: syllabus?.[sectionConfig.contentKey] || (sectionConfig.contentKey === 'courseContent' ? '' : []) // Use optional chaining
   }));
 
   const [syllabusSections, setSyllabusSections] = useState(syllabusSectionsData);
@@ -186,8 +187,8 @@ const SyllabusScreen = ({ route, navigation }) => {
               <FontAwesome5 name={branchIcon} size={28} color="#FFFFFF" style={styles.headerIcon} />
               <View>
                 <Text style={styles.headerTitle}>{subject}</Text>
-                {subjectData.course_code !== null && (
-                  <Text style={styles.courseCode}>Course Code: {subjectData.course_code}</Text>
+                {subjectData?.course_code !== null && ( // Use optional chaining
+                  <Text style={styles.courseCode}>Course Code: {subjectData.course_code}</Text> // Use optional chaining
                 )}
               </View>
             </View>
@@ -210,7 +211,6 @@ const SyllabusScreen = ({ route, navigation }) => {
     </SafeAreaView>
   );
 };
-
 
 
 const styles = StyleSheet.create({

@@ -12,23 +12,24 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
-import data from '../data/data.json';
+// Remove: import data from '../data/data.json';  // No longer needed
 const { width } = Dimensions.get('window');
 
 const SemesterScreen = ({ route, navigation }) => {
-  const { branch } = route.params || {};
-  const branchData = data.branches.find(b => b.name === branch) || {};
-  const semesters = branchData.semesters || [];
+  console.log('route.params in SemesterScreen:', route.params); // ADDED LOG
+  const { branch, data } = route.params || {}; // Get 'data' from route.params
+  const branchData = data?.branches?.find(b => b.name === branch) || {}; // Safe access with optional chaining
+  const semesters = branchData?.semesters || []; // Safe access with optional chaining
 
   const headerAnimation = useRef(new Animated.Value(0)).current;
   const animatedValues = useRef(semesters.map(() => new Animated.Value(0))).current;
 
   const branchIcons = Object.fromEntries(
-    data.branches.map(b => [b.name, b.icon])
+    data?.branches?.map(b => [b.name, b.icon]) || [] // Safe access with optional chaining, default to empty array
   );
   const branchIcon = branchIcons[branch] || 'graduation-cap';
 
-  const getBranchColor = () => branchData.gradientColors || ['#1976D2', '#42a5f5'];
+  const getBranchColor = () => branchData?.gradientColors || ['#1976D2', '#42a5f5']; // Safe access with optional chaining
   const branchColor = getBranchColor();
 
   useEffect(() => {
@@ -137,7 +138,7 @@ const SemesterScreen = ({ route, navigation }) => {
               semester={sem}
               animatedValue={animatedValues[index]}
               onPress={() =>
-                navigation.navigate('Subject', { branch, semester: sem.name, semesterId: sem.id })
+                navigation.navigate('Subject', { branch, semester: sem.name, semesterId: sem.id, data: data }) // Pass data here as well if needed in next screen
               }
             />
           ))}

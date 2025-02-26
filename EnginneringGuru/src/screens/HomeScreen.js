@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -7,32 +7,123 @@ import {
   SafeAreaView,
   StatusBar,
   ScrollView,
-  Animated
+  Animated,
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
-import data from '../data/data.json'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const DATA_URL = 'https://raw.githubusercontent.com/hasanraiyan/beu-data/refs/heads/main/data.json';
+const STORAGE_KEY = 'app_data_cache';
 
 const HomeScreen = ({ navigation }) => {
-  const branches = data.branches;
-
-  const animatedValues = useRef(branches.map(() => new Animated.Value(0))).current;
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [animatedValues, setAnimatedValues] = useState([]);
+  const [animationsReady, setAnimationsReady] = useState(false);
 
   useEffect(() => {
-    Animated.stagger(
-      100,
-      animatedValues.map(anim =>
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        })
-      )
-    ).start();
+    fetchData();
   }, []);
 
-  const BranchCard = ({ branch, animatedValue, onPress }) => {
+  useEffect(() => {
+    if (data && data.branches) {
+      // Initialize animated values when data is available
+      const newAnimatedValues = data.branches.map(() => new Animated.Value(0));
+      setAnimatedValues(newAnimatedValues);
+      setAnimationsReady(true);
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (animationsReady && animatedValues.length > 0) {
+      // Start animations only after animated values are properly initialized
+      Animated.stagger(
+        100,
+        animatedValues.map(anim =>
+          Animated.timing(anim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          })
+        )
+      ).start();
+    }
+  }, [animationsReady, animatedValues]);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+
+      // Try to get data from cache first
+      const cachedData = await AsyncStorage.getItem(STORAGE_KEY);
+
+      if (cachedData) {
+        const parsedCacheData = JSON.parse(cachedData);
+        setData(parsedCacheData);
+        console.log('Data state in HomeScreen after loading from cache:', parsedCacheData); // ADDED LOG
+        setLoading(false);
+      } else {
+        // If no cached data, fetch from remote
+        await fetchFromRemote();
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError("Failed to load data. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  const fetchFromRemote = async () => {
+    try {
+      const response = await fetch(DATA_URL);
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const fetchedData = await response.json();
+
+      // Save to cache
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fetchedData));
+      setData(fetchedData);
+      console.log('Data state in HomeScreen after fetching from remote:', fetchedData); // ADDED LOG
+      setLoading(false);
+    } catch (err) {
+      console.error("Error fetching remote data:", err);
+      setError("Failed to load data from server. Please check your connection.");
+      setLoading(false);
+    }
+  };
+
+  const updateData = async () => {
+    Alert.alert(
+      "Update Data",
+      "Do you want to update the data from the server?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Update",
+          onPress: async () => {
+            setLoading(true);
+            await fetchFromRemote();
+            Alert.alert("Success", "Data has been updated successfully!");
+          }
+        }
+      ]
+    );
+  };
+
+  const BranchCard = ({ branch, index, onPress }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
+
+    // Make sure we have valid animated values before using them
+    const animValue = animatedValues[index] || new Animated.Value(0);
 
     const handlePressIn = () => {
       Animated.spring(scaleAnim, { toValue: 0.98, useNativeDriver: true }).start();
@@ -47,10 +138,10 @@ const HomeScreen = ({ navigation }) => {
         style={[
           styles.animatedContainer,
           {
-            opacity: animatedValue,
+            opacity: animValue,
             transform: [
-              { translateY: animatedValue.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) },
-              { scale: animatedValue.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) },
+              { translateY: animValue.interpolate({ inputRange: [0, 1], outputRange: [50, 0] }) },
+              { scale: animValue.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) },
               { scale: scaleAnim }
             ]
           }
@@ -61,7 +152,15 @@ const HomeScreen = ({ navigation }) => {
           activeOpacity={0.8}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
-          onPress={onPress}
+          onPress={() => {
+            if (data) { // ADDED CONDITIONAL CHECK
+              console.log('Data being passed to SemesterScreen:', data); // ADDED LOG
+              navigation.navigate('Semester', { branch: branch.name, data: data });
+            } else {
+              console.warn('Data is not yet loaded, navigation prevented.');
+              // Optionally, you could show a message to the user.
+            }
+          }}
           accessibilityLabel={`Navigate to ${branch.name} branch`}
         >
           <LinearGradient
@@ -81,6 +180,27 @@ const HomeScreen = ({ navigation }) => {
       </Animated.View>
     );
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2962FF" />
+        <Text style={styles.loadingText}>Loading data...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <FontAwesome5 name="exclamation-circle" size={50} color="#FF3B30" />
+        <Text style={styles.errorText}>{error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchData}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -108,19 +228,25 @@ const HomeScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {branches.map((branch, index) => (
+        {data.branches.map((branch, index) => (
           <BranchCard
             key={index}
             branch={branch}
-            animatedValue={animatedValues[index]}
-            onPress={() => navigation.navigate('Semester', { branch: branch.name })}
+            index={index}
+            onPress={() => {
+              if (data) {
+                navigation.navigate('Semester', { branch: branch.name, data: data });
+              } else {
+                console.warn('Data is not yet loaded, navigation prevented.');
+              }
+            }}
           />
         ))}
       </ScrollView>
 
-      {/* <View style={styles.footer}>
-        <Text style={styles.footerText}>{data.metadata.academicYear}</Text>
-      </View> */}
+      <TouchableOpacity style={styles.floatingUpdateButton} onPress={updateData}>
+        <FontAwesome5 name="sync-alt" size={20} color="#FFFFFF" />
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -139,12 +265,45 @@ function lightenColor(color, percent) {
   ).toString(16).slice(1);
 }
 
-
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f7f9fc',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f7f9fc',
+  },
+  loadingText: {
+    marginTop: 15,
+    fontSize: 16,
+    color: '#555',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f7f9fc',
+    padding: 20,
+  },
+  errorText: {
+    marginTop: 15,
+    fontSize: 16,
+    color: '#555',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#2962FF',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
   },
   headerGradient: {
     paddingTop: 40,
@@ -153,14 +312,6 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     overflow: 'hidden',
-  },
-  headerPattern: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    width: '100%',
-    height: '100%',
-    opacity: 0.15,
   },
   headerContent: {
     alignItems: 'start',
@@ -237,23 +388,14 @@ const styles = StyleSheet.create({
     color: '#777',
     lineHeight: 20,
   },
-  footer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    color: '#888',
-    textAlign: 'center',
-  },
-  floatingHelpButton: {
+  floatingUpdateButton: {
     position: 'absolute',
     bottom: 20,
     right: 20,
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#007BFF',
+    backgroundColor: '#2962FF',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#000',
