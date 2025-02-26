@@ -118,9 +118,9 @@ const HomeScreen = ({ navigation }) => {
         ))}
       </ScrollView>
 
-      <View style={styles.footer}>
+      {/* <View style={styles.footer}>
         <Text style={styles.footerText}>{data.metadata.academicYear}</Text>
-      </View>
+      </View> */}
     </SafeAreaView>
   );
 };
