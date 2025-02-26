@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
+import Markdown from 'react-native-markdown-display';
 import data from '../data/data.json'; // Adjust path as needed
 
 const SyllabusScreen = ({ route, navigation }) => {
@@ -26,17 +27,36 @@ const SyllabusScreen = ({ route, navigation }) => {
   const getBranchColor = () => branchData.gradientColors || ['#1976D2', '#42a5f5'];
   const branchColor = getBranchColor();
 
-  const syllabusSections = [
-    { title: 'Course Objectives', icon: 'bullseye', content: syllabus.courseObjectives || [] },
-    { title: 'Learning Outcomes', icon: 'lightbulb', content: syllabus.learningOutcomes || [] },
-    { title: 'Course Content', icon: 'book', content: syllabus.courseContent || [] },
-    { title: 'Reference Books', icon: 'book-open', content: syllabus.referenceBooks || [] },
-    { title: 'Assessment Methods', icon: 'clipboard-check', content: syllabus.assessmentMethods || [] },
+  const allSyllabusSectionsConfig = [
+    { title: 'Course Objectives', icon: 'bullseye', contentKey: 'courseObjectives' },
+    { title: 'Learning Outcomes', icon: 'lightbulb', contentKey: 'learningOutcomes' },
+    {
+      title: 'Course Content',
+      icon: 'book',
+      contentKey: 'courseContent'
+    },
+    { title: 'Reference Books', icon: 'book-open', contentKey: 'referenceBooks' },
+    { title: 'Assessment Methods', icon: 'clipboard-check', contentKey: 'assessmentMethods' },
   ];
+
+  const syllabusSectionsData = allSyllabusSectionsConfig.filter(sectionConfig => {
+    const content = syllabus[sectionConfig.contentKey];
+    if (sectionConfig.contentKey === 'courseContent') {
+      return typeof content === 'string' && content.trim() !== '';
+    } else {
+      return Array.isArray(content) && content.length > 0;
+    }
+  }).map(sectionConfig => ({
+    title: sectionConfig.title,
+    icon: sectionConfig.icon,
+    content: syllabus[sectionConfig.contentKey] || (sectionConfig.contentKey === 'courseContent' ? '' : [])
+  }));
+
+  const [syllabusSections, setSyllabusSections] = useState(syllabusSectionsData);
+
 
   const headerAnimation = useRef(new Animated.Value(0)).current;
   const animatedValues = useRef(syllabusSections.map(() => new Animated.Value(0))).current;
-  const [expandedSections, setExpandedSections] = useState(syllabusSections.map(() => true));
 
   useEffect(() => {
     Animated.sequence([
@@ -50,13 +70,10 @@ const SyllabusScreen = ({ route, navigation }) => {
     ]).start();
   }, [headerAnimation, animatedValues]);
 
-  const toggleSection = (index) => {
-    setExpandedSections(prev => prev.map((expanded, i) => (i === index ? !expanded : expanded)));
-  };
 
-  const SyllabusSection = ({ section, index, animatedValue }) => {
+  const SyllabusSection = React.memo(({ section, branchColor, animatedValue }) => {
     const contentHeight = useRef(new Animated.Value(0)).current;
-    const isExpanded = expandedSections[index];
+    const [isExpanded, setIsExpanded] = useState(true); // Initialize all sections as expanded
 
     useEffect(() => {
       Animated.timing(contentHeight, {
@@ -66,7 +83,10 @@ const SyllabusScreen = ({ route, navigation }) => {
       }).start();
     }, [isExpanded]);
 
-    const height = contentHeight.interpolate({ inputRange: [0, 1], outputRange: [0, 'auto'] });
+    const toggleSection = () => {
+      setIsExpanded(!isExpanded);
+    };
+
 
     return (
       <Animated.View
@@ -80,7 +100,7 @@ const SyllabusScreen = ({ route, navigation }) => {
       >
         <TouchableOpacity
           style={[styles.section, { borderLeftColor: branchColor[0] }]}
-          onPress={() => toggleSection(index)}
+          onPress={toggleSection}
           activeOpacity={0.8}
         >
           <View style={styles.sectionHeader}>
@@ -100,15 +120,44 @@ const SyllabusScreen = ({ route, navigation }) => {
               style={styles.toggleIcon}
             />
           </View>
-          <Animated.View style={[styles.sectionContent, { height: isExpanded ? 'auto' : 0, opacity: contentHeight }]}>
-            {section.content.map((item, idx) => (
-              <Text key={idx} style={styles.contentItem}>• {item}</Text>
-            ))}
+          <Animated.View
+            style={[
+              styles.sectionContent,
+              {
+                height: isExpanded ? 'auto' : 0,
+                opacity: contentHeight
+              }
+            ]}
+          >
+            {section.title === 'Course Content' ? (
+              <Markdown style={styles.markdownStyles}>
+                {typeof section.content === 'string'
+                  ? section.content
+                  : section.content.join('\n')}
+              </Markdown>
+            ) : (
+              Array.isArray(section.content) && section.content.map((item, idx) => (
+                <Text
+                  key={idx}
+                  style={[
+                    styles.contentItem,
+                    item.startsWith('#') && styles.heading,
+                    item.startsWith('##') && styles.subheading
+                  ]}
+                >
+                  {item.startsWith('#') ? item.replace(/^#+/, '') : `• ${item}`}
+                </Text>
+              ))
+            )}
           </Animated.View>
         </TouchableOpacity>
       </Animated.View>
     );
-  };
+  }, (prevProps, nextProps) => {
+    // Memoize based on section identity (assuming section object is stable or shallow comparison is sufficient)
+    return prevProps.section === nextProps.section;
+  });
+
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -152,16 +201,12 @@ const SyllabusScreen = ({ route, navigation }) => {
             <SyllabusSection
               key={section.title}
               section={section}
-              index={index}
+              branchColor={branchColor}
               animatedValue={animatedValues[index]}
             />
           ))}
         </View>
       </ScrollView>
-
-      {/* <TouchableOpacity style={styles.floatingHelpButton} onPress={() => navigation.navigate('Help')}>
-        <FontAwesome5 name="question-circle" size={24} color="#FFFFFF" />
-      </TouchableOpacity> */}
     </SafeAreaView>
   );
 };
@@ -204,7 +249,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   headerContent: {
-    alignItems: 'flex-start', // Modified to align items to the start
+    alignItems: 'flex-start',
     marginTop: 16,
   },
   branchText: {
@@ -212,12 +257,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.9)',
     marginBottom: 4,
-    textAlign: 'left', // Modified to align text to the left
+    textAlign: 'left',
   },
   headerTitleContainer: {
     flexDirection: 'row',
-    alignItems: 'center', // Keep align items center for vertical alignment with icon
-    justifyContent: 'flex-start', // Modified to align content to the start
+    alignItems: 'center',
+    justifyContent: 'flex-start',
     marginBottom: 8,
   },
   headerIcon: {
@@ -227,12 +272,12 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    textAlign: 'left', // Modified to align text to the left
+    textAlign: 'left',
   },
   subtitle: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'left', // Modified to align text to the left
+    textAlign: 'left',
   },
   scrollView: {
     flex: 1,
@@ -278,7 +323,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   sectionContent: {
-    marginLeft: 48,
+    marginLeft: 20,
     overflow: 'hidden',
   },
   contentItem: {
@@ -287,22 +332,25 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginBottom: 6,
   },
-  floatingHelpButton: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#007BFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 5,
-    zIndex: 10,
+  heading: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 10,
+    marginBottom: 8,
+  },
+  subheading: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#444',
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  // Custom markdown styles
+  markdownStyles: {
+    body: { fontSize: 14, color: '#555', lineHeight: 22 },
+    heading1: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 8, marginTop: 10 },
+    heading2: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 6, marginTop: 8 },
   },
 });
 
