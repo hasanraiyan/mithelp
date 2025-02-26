@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
-import data from '../data/data.json'; // Adjust path as needed
+import data from '../data/data.json'; 
 
 const HomeScreen = ({ navigation }) => {
   const branches = data.branches;

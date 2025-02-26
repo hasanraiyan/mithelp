@@ -12,8 +12,7 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
-import data from '../data/data.json'; // Adjust path as needed
-
+import data from '../data/data.json';
 const { width } = Dimensions.get('window');
 
 const SemesterScreen = ({ route, navigation }) => {
@@ -73,7 +72,8 @@ const SemesterScreen = ({ route, navigation }) => {
           <View style={styles.semesterInfo}>
             <Text style={styles.semesterText}>{semester.name}</Text>
             <Text style={styles.semesterDetails}>
-              {semester.subjectsCount} Subjects • {semester.credits} Credits
+              {semester.subjectsCount} Subjects
+              {semester.credits && semester.credits !== 0 ? ` • ${semester.credits} Credits` : null}
             </Text>
           </View>
           <LinearGradient
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   headerContent: {
-    alignItems: 'flex-start', 
+    alignItems: 'flex-start',
     marginTop: 16,
   },
   branchType: {

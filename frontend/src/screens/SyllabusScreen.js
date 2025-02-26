@@ -54,7 +54,6 @@ const SyllabusScreen = ({ route, navigation }) => {
 
   const [syllabusSections, setSyllabusSections] = useState(syllabusSectionsData);
 
-
   const headerAnimation = useRef(new Animated.Value(0)).current;
   const animatedValues = useRef(syllabusSections.map(() => new Animated.Value(0))).current;
 
@@ -69,7 +68,6 @@ const SyllabusScreen = ({ route, navigation }) => {
       ),
     ]).start();
   }, [headerAnimation, animatedValues]);
-
 
   const SyllabusSection = React.memo(({ section, branchColor, animatedValue }) => {
     const contentHeight = useRef(new Animated.Value(0)).current;
@@ -86,7 +84,6 @@ const SyllabusScreen = ({ route, navigation }) => {
     const toggleSection = () => {
       setIsExpanded(!isExpanded);
     };
-
 
     return (
       <Animated.View
@@ -154,10 +151,8 @@ const SyllabusScreen = ({ route, navigation }) => {
       </Animated.View>
     );
   }, (prevProps, nextProps) => {
-    // Memoize based on section identity (assuming section object is stable or shallow comparison is sufficient)
     return prevProps.section === nextProps.section;
   });
-
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -188,9 +183,13 @@ const SyllabusScreen = ({ route, navigation }) => {
             <Text style={styles.branchText}>{branch} - {semester}</Text>
             <View style={styles.headerTitleContainer}>
               <FontAwesome5 name={branchIcon} size={28} color="#FFFFFF" style={styles.headerIcon} />
-              <Text style={styles.headerTitle}>{subject}</Text>
+              <View>
+                <Text style={styles.headerTitle}>{subject}</Text>
+                {subjectData.course_code !== null && (
+                  <Text style={styles.courseCode}>Course Code: {subjectData.course_code}</Text>
+                )}
+              </View>
             </View>
-            <Text style={styles.subtitle}>Syllabus Details</Text>
           </View>
         </LinearGradient>
       </Animated.View>
@@ -210,6 +209,8 @@ const SyllabusScreen = ({ route, navigation }) => {
     </SafeAreaView>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   safeArea: {
@@ -351,6 +352,11 @@ const styles = StyleSheet.create({
     body: { fontSize: 14, color: '#555', lineHeight: 22 },
     heading1: { fontSize: 20, fontWeight: 'bold', color: '#333', marginBottom: 8, marginTop: 10 },
     heading2: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 6, marginTop: 8 },
+  },
+  courseCode: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 2,
   },
 });
 

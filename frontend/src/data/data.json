@@ -18,8 +18,8 @@
                     "subjects": [
                         {
                             "name": "Discrete Mathematics",
-                            "course_code": null,
-                            "credits": 0,
+                            "course_code": 106301,
+                            "credits": 4,
                             "type": "Core Subject",
                             "syllabus": {
                                 "courseObjectives": [
