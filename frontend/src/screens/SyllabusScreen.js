@@ -7,11 +7,12 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
 import Markdown from 'react-native-markdown-display';
-import data from '../data/data.json'; // Adjust path as needed
+import data from '../data/data.json'; 
 
 const SyllabusScreen = ({ route, navigation }) => {
   const { branch, semester, subject } = route.params;
@@ -29,12 +30,12 @@ const SyllabusScreen = ({ route, navigation }) => {
 
   const allSyllabusSectionsConfig = [
     { title: 'Course Objectives', icon: 'bullseye', contentKey: 'courseObjectives' },
-    { title: 'Learning Outcomes', icon: 'lightbulb', contentKey: 'learningOutcomes' },
     {
       title: 'Course Content',
       icon: 'book',
       contentKey: 'courseContent'
     },
+    { title: 'Learning Outcomes', icon: 'lightbulb', contentKey: 'learningOutcomes' },
     { title: 'Reference Books', icon: 'book-open', contentKey: 'referenceBooks' },
     { title: 'Assessment Methods', icon: 'clipboard-check', contentKey: 'assessmentMethods' },
   ];
