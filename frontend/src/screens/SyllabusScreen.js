@@ -159,9 +159,9 @@ const SyllabusScreen = ({ route, navigation }) => {
         </View>
       </ScrollView>
 
-      <TouchableOpacity style={styles.floatingHelpButton} onPress={() => navigation.navigate('Help')}>
+      {/* <TouchableOpacity style={styles.floatingHelpButton} onPress={() => navigation.navigate('Help')}>
         <FontAwesome5 name="question-circle" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </SafeAreaView>
   );
 };
