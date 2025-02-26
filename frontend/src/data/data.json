@@ -11,44 +11,90 @@
             "description": "Software development, networking, and data management",
             "semesters": [
                 {
-                    "id": 1,
-                    "name": "Semester 1",
-                    "subjectsCount": 10,
-                    "credits": 20,
+                    "id": 3,
+                    "name": "Semester 3",
+                    "subjectsCount": 5,
+                    "credits": 0,
                     "subjects": [
                         {
-                            "name": "Engineering Physics",
-                            "course_code": 100110,
-                            "credits": 3,
+                            "name": "Discrete Mathematics",
+                            "course_code": null,
+                            "credits": 0,
                             "type": "Core Subject",
                             "syllabus": {
                                 "courseObjectives": [
-                                    "Understand the fundamental concepts of Mathematics I",
-                                    "Learn to apply theoretical knowledge to practical problems",
-                                    "Develop critical thinking and problem-solving skills"
+                                    "Use mathematically correct terminology and notation.",
+                                    "Construct correct direct and indirect proofs.",
+                                    "Use division into cases in a proof.",
+                                    "Use counterexamples.",
+                                    "Apply logical reasoning to solve a variety of problems."
                                 ],
                                 "learningOutcomes": [
-                                    "Explain the key principles of Mathematics I",
-                                    "Solve complex problems using appropriate methods",
-                                    "Analyze and interpret data effectively"
+                                    "For a given logic sentence express it in terms of predicates, quantifiers, and logical connectives.",
+                                    "For a given problem, derive the solution using deductive logic and prove the solution based on logical inference.",
+                                    "For a given mathematical problem, classify its algebraic structure.",
+                                    "Evaluate Boolean functions and simplify expressions using the properties of Boolean algebra",
+                                    "Develop the given problem as graph networks and solve with techniques of graph theory."
                                 ],
-                                "courseContent": "# Course Content\n\n## Unit 1: Frame of Reference\n- Non-Inertial frame of reference, rotating coordinate system, centripetal and Coriolis acceleration and its application in weather system (2 hrs)\n\n## Unit 1: Oscillations\n- Harmonic Oscillator, Damped Harmonic motion – overdamped, critically Damped and lightly damped oscillators, Force Oscillators and Resonance (3 hrs)\n\n## Unit 2: Optics\n- Huygens’s Principle, Superposition of Waves and interference of Light by wave front splitting and amplitude-splitting; Young’s double slit experiment, Michelson interferometer, Fraunhofer diffraction from single slit and circular aperture, Diffraction Grating and their resolving power (4 hrs)\n\n## Unit 2: LASER\n- Einstein’s theory of matter-radiations interaction, Einstein’s Coefficients (A and B), Amplification by population inversion, Different types of lasers – Gas Laser, Helium-Neon Laser, Solid State Laser (Ruby, Neodymium), Semiconductor Laser (4 hrs)\n\n## Unit 3: Quantum Mechanics\n- Compton Effect, Photoelectric Effect, Wave Particle duality, de Broglie’s hypothesis, Heisenberg’s Uncertainty Principle, Wave function and wave packets, phase and group velocities, Schrodinger’s Wave Equation, Normalization, Expectation values, Eigenvalues and Eigenfunction\n\n## Unit 3: Applications in One Dimension\n- Application of Schrodinger Wave Equation for particle in one dimensional box – its wavefunction and eigenvalue of energy and momentum (2 hrs)\n\n## Unit 4: Vector Calculus\n- Gradient, Divergence and Curl, Line, Surface and Volume integrals, Gauss’s Divergence theorem and Stokes’ theorem in Cartesian Coordinate (5 hrs)\n\n## Unit 4: Electrostatics\n- Gauss’s Law and its applications, Divergence and Curl of Electrostatic fields, Electrostatic Potential, Boundary Conditions, Poisson’s and Laplace’s equations, Dielectrics, Polarization, Bound Charges, Electric displacement, Boundary Conditions in dielectrics (4 hrs)\n\n## Unit 5: Magnetostatics\n- Lorentz force, Biot-Savart and Ampere’s circuital laws and their applications, Divergence and Curl of Magneto static fields, Magnetic vector potential, Force and torque on a magnetic dipole, Magnetic Materials, Magnetization, Bound currents, Boundary conditions (4 hrs)\n\n## Unit 5: Electrodynamics and Electromagnetic Waves\n- Ohm’s law, Motional EMF, Faraday’s Law, Lenz’s law, Self and mutual inductance, Energy stored in magnetic field, Maxwell’s equations in vacuum and nonconducting medium, Continuity Equation, Poynting Theorem, Wave Equations: plain electromagnetic wave in vacuum and their transverse nature and Polarization (4 hrs)\n\n## Unit 6: Introduction to Solids and Semi-Conductors\n- Free electron theory of metal, fermi level, Bloch’s theorem for particle in a periodic Potential, Kroning-Penney model and origin of energy band (3 hrs)\n\n## Unit 6: Electronic Materials\n- Metals, semiconductors and insulators, intrinsic and extrinsic semiconductors, Carrier transport, diffusion and drift, P-N junction (3 hrs)",
+                                "courseContent": "# Course Content\n\n## Module 1: Lecture 6\n- Sets, Relation and Function: Operations and Laws of Sets, Cartesian Products, Binary Relation, Partial Ordering Relation, Equivalence Relation, Image of a Set, Sum and Product of Functions, Bijective functions, Inverse and Composite Function, Size of a Set, Finite and infinite Sets, Countable and uncountable Sets, Cantor’s diagonal argument and The Power Set theorem, Schroeder-Bernstein theorem.\n\n## Module 2: Lecture 8\n- Principles of Mathematical Induction: The Well-Ordering Principle, Recursive definition, The Division algorithm: Prime Numbers, The Greatest Common Divisor: Euclidean Algorithm, The Fundamental Theorem of Arithmetic.\n- Basic counting techniques-inclusion and exclusion, pigeon-hole principle, permutation and combination.\n\n## Module 3: Lecture 8\n- Propositional Logic: Syntax, Semantics, Validity and Satisfiability, Basic Connectives and Truth Tables, Logical Equivalence: The Laws of Logic, Logical Implication, Rules of Inference, The use of Quantifiers. Proof Techniques: Some Terminology, Proof Methods and Strategies, Forward Proof, Proof by Contradiction, Proof by Contraposition, Proof of Necessity and Sufficiency.\n\n## Module 4: Lecture 8\n- Algebraic Structures and Morphism: Algebraic Structures with one Binary Operation, Semi Groups, Monoids, Groups, Congruence Relation and Quotient Structures, Free and Cyclic Monoids and Groups, Permutation Groups, Substructures, Normal Subgroups, Algebraic Structures with two Binary Operation, Rings, Integral Domain and Fields. Boolean Algebra and Boolean Ring, Identities of Boolean Algebra, Duality, Representation of Boolean Function, Disjunctive and Conjunctive Normal Form\n\n## Module 5: Lecture 10\n- Graphs and Trees: Graphs and their properties, Degree, Connectivity, Path, Cycle, Sub Graph, Isomorphism, Eulerian and Hamiltonian Walks, Graph Coloring, Coloring maps, Planar Graphs, Coloring Vertices, Coloring Edges, List Coloring, Perfect Graph, definition properties and Example, rooted trees, trees and sorting, weighted trees and prefix codes, Bi-connected component and Articulation Points, Shortest distances.",
                                 "referenceBooks": [
-                                    "Quantum Physics of Atoms, Molecules, Solids, Nuclei and Particles, R. Eisberg R. Resnick, Wiley India Pvt. Ltd ISBN 978-81-265-0818-1",
-                                    "Theory of Vibration with Application, W.T. Thomson M. D. Dahleh, Pearson India ISBN 978-81-317-0482-0",
-                                    "Introduction to Electrodynamics, D.J. Griffiths, Pearson India, ISBN 978-93-325-5044-5",
-                                    "Electromagnetism, I.S. Grant, W. R. Phillips, Wiley India Pvt. Ltd ISBN 978-04-719-2712-9",
-                                    "The Feynman Lectures on Physics, R.P. Feynman R. B. Leighton, Pearson India ISBN 978-00-710-7458-2",
-                                    "Optics, Ajay Ghatak, McGraw Hill ISBN 978-93-901-1359-0",
-                                    "Physics of Vibration and Waves, H. J. Pain, Wiley India Pvt. Ltd, ISBN 978-04-700-1296-3",
-                                    "Concept of Modern Physics, Arthur Beiser, McGraw Hill ISBN 978-93-513-4185-7",
-                                    "Introduction to Solid State Physics, C. Kittle, Wiley India Pvt. Ltd, ISBN 978-81-265-7843-6"
+                                    "Kenneth H. Rosen, Discrete Mathematics and its Applications, Tata McGraw –Hill",
+                                    "Susanna S. Epp, Discrete Mathematics with Applications,4th edition, Wadsworth Publishing Co.Inc.",
+                                    "C L Liu and D P Mohapatra, Elements of Discrete Mathematics A Computer Oriented Approach, 3rd Edition by, Tata McGraw –Hill."
                                 ],
-                                "assessmentMethods": [
-                                    "Mid-term examination: 30%",
-                                    "Final examination: 50%",
-                                    "Assignments and projects: 20%"
-                                ]
+                                "assessmentMethods": []
+                            }
+                        },
+                        {
+                            "name": "Data Structure and Algorithms",
+                            "course_code": null,
+                            "credits": 0,
+                            "type": "Core Subject",
+                            "syllabus": {
+                                "courseObjectives": [],
+                                "learningOutcomes": [],
+                                "courseContent": null,
+                                "referenceBooks": [],
+                                "assessmentMethods": []
+                            }
+                        },
+                        {
+                            "name": "Digital Electronics",
+                            "course_code": null,
+                            "credits": 0,
+                            "type": "Core Subject",
+                            "syllabus": {
+                                "courseObjectives": [],
+                                "learningOutcomes": [],
+                                "courseContent": null,
+                                "referenceBooks": [],
+                                "assessmentMethods": []
+                            }
+                        },
+                        {
+                            "name": "Object Oriented Programming using C++",
+                            "course_code": null,
+                            "credits": 0,
+                            "type": "Core Subject",
+                            "syllabus": {
+                                "courseObjectives": [],
+                                "learningOutcomes": [],
+                                "courseContent": null,
+                                "referenceBooks": [],
+                                "assessmentMethods": []
+                            }
+                        },
+                        {
+                            "name": "Mathematics -III (Differential Calculus)",
+                            "course_code": null,
+                            "credits": 0,
+                            "type": "Core Subject",
+                            "syllabus": {
+                                "courseObjectives": [],
+                                "learningOutcomes": [],
+                                "courseContent": null,
+                                "referenceBooks": [],
+                                "assessmentMethods": []
                             }
                         }
                     ]
