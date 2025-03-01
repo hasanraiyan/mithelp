@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
-  Dimensions
+  Dimensions,
+  ActivityIndicator // Import ActivityIndicator
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -17,34 +18,55 @@ import { FontAwesome5 } from '@expo/vector-icons';
 const { width } = Dimensions.get('window');
 
 const SubjectScreen = ({ route, navigation }) => {
-  console.log('route.params in SubjectScreen:', route.params); // ADDED LOG FOR DEBUGGING
-  const { branch = 'default', semester, data } = route.params || {}; // Receive 'data' from route.params
-  const branchData = data?.branches?.find(b => b.name === branch) || {}; // Use optional chaining
-  const semesterData = branchData?.semesters?.find(s => s.name === semester) || {}; // Use optional chaining
-  const subjects = semesterData?.subjects || []; // Use optional chaining
+  console.log('route.params in SubjectScreen:', route.params);
+  const { branch = 'default', semester, data } = route.params || {};
+  const [subjects, setSubjects] = useState([]); // State to hold subjects
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState(null); // Error state
 
   const headerAnimation = useRef(new Animated.Value(0)).current;
-  const animatedValues = useRef(subjects.map(() => new Animated.Value(0))).current;
+  const animatedValues = useRef([]).current; // Initialize as empty array
 
   const branchIcons = Object.fromEntries(
-    data?.branches?.map(b => [b.name, b.icon]) || [] // Use optional chaining and default to empty array
+    data?.branches?.map(b => [b.name, b.icon]) || []
   );
   const branchIcon = branchIcons[branch] || 'graduation-cap';
 
-  const getBranchColor = () => branchData?.gradientColors || ['#1976D2', '#42a5f5']; // Use optional chaining
+  const getBranchColor = () => data?.branches?.find(b => b.name === branch)?.gradientColors || ['#1976D2', '#42a5f5'];
   const branchColor = getBranchColor();
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.timing(headerAnimation, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.stagger(
-        75,
-        animatedValues.map(anim =>
-          Animated.spring(anim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true })
-        )
-      ),
-    ]).start();
-  }, [headerAnimation, animatedValues]);
+    setLoading(true); // Start loading
+    setError(null); // Clear any previous errors
+    try {
+      const branchData = data?.branches?.find(b => b.name === branch) || {};
+      const semesterData = branchData?.semesters?.find(s => s.name === semester) || {};
+      const subjectData = semesterData?.subjects || [];
+      setSubjects(subjectData);
+      animatedValues.current = subjectData.map(() => new Animated.Value(0)); // Initialize animatedValues based on subjects
+      setLoading(false); // Loading finished successfully
+    } catch (processError) {
+      console.error("Error processing subject data:", processError);
+      setError("Failed to load subjects for this semester.");
+      setLoading(false); // Loading finished with error
+      setSubjects([]); // Ensure subjects state is empty in case of error
+    }
+  }, [branch, semester, data]);
+
+
+  useEffect(() => {
+    if (!loading && subjects.length > 0) { // Start animation only when not loading and subjects are available
+      Animated.sequence([
+        Animated.timing(headerAnimation, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.stagger(
+          75,
+          animatedValues.current.map(anim =>
+            Animated.spring(anim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true })
+          )
+        ),
+      ]).start();
+    }
+  }, [headerAnimation, loading, subjects]); // Added loading and subjects to dependency array
 
   const SubjectCard = ({ subject, animatedValue, onPress }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -90,6 +112,25 @@ const SubjectScreen = ({ route, navigation }) => {
     );
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2962FF" />
+        <Text style={styles.loadingText}>Loading subjects...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <FontAwesome5 name="exclamation-circle" size={50} color="#FF3B30" />
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
@@ -133,8 +174,8 @@ const SubjectScreen = ({ route, navigation }) => {
             <SubjectCard
               key={subject.name}
               subject={subject}
-              animatedValue={animatedValues[index]}
-              onPress={() => navigation.navigate('Syllabus', { branch, semester, subject: subject.name, data: data })} // Pass data to next screen if needed
+              animatedValue={animatedValues.current[index]}
+              onPress={() => navigation.navigate('Syllabus', { branch, semester, subject: subject.name, data: data })}
             />
           ))}
         </View>
@@ -182,7 +223,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   headerContent: {
-    alignItems: 'flex-start', // Modified to align items to the start
+    alignItems: 'flex-start',
     marginTop: 16,
   },
   branchText: {
@@ -190,12 +231,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.9)',
     marginBottom: 4,
-    textAlign: 'left', // Modified to align text to the left
+    textAlign: 'left',
   },
   headerTitleContainer: {
     flexDirection: 'row',
-    alignItems: 'center', // Keep align items center for vertical alignment with icon
-    justifyContent: 'flex-start', // Modified to align content to the start
+    alignItems: 'center',
+    justifyContent: 'flex-start',
     marginBottom: 8,
   },
   headerIcon: {
@@ -205,12 +246,12 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    textAlign: 'left', // Modified to align text to the left
+    textAlign: 'left',
   },
   subtitle: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'left', // Modified to align text to the left
+    textAlign: 'left',
     lineHeight: 22,
   },
   scrollView: {
@@ -278,6 +319,30 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
     zIndex: 10,
+  },
+  loadingContainer: { // Added loading container style
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f7f9fc',
+  },
+  loadingText: { // Added loading text style
+    marginTop: 15,
+    fontSize: 16,
+    color: '#555',
+  },
+  errorContainer: { // Added error container style
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f7f9fc',
+    padding: 20,
+  },
+  errorText: { // Added error text style
+    marginTop: 15,
+    fontSize: 16,
+    color: '#555',
+    textAlign: 'center',
   },
 });
 

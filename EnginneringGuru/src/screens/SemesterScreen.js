@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
-  Dimensions
+  Dimensions,
+  ActivityIndicator // Import ActivityIndicator
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -16,33 +17,54 @@ import { FontAwesome5 } from '@expo/vector-icons';
 const { width } = Dimensions.get('window');
 
 const SemesterScreen = ({ route, navigation }) => {
-  console.log('route.params in SemesterScreen:', route.params); // ADDED LOG
-  const { branch, data } = route.params || {}; // Get 'data' from route.params
-  const branchData = data?.branches?.find(b => b.name === branch) || {}; // Safe access with optional chaining
-  const semesters = branchData?.semesters || []; // Safe access with optional chaining
+  console.log('route.params in SemesterScreen:', route.params);
+  const { branch, data } = route.params || {};
+  const [semesters, setSemesters] = useState([]); // State to hold semesters
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState(null); // Error state
 
   const headerAnimation = useRef(new Animated.Value(0)).current;
-  const animatedValues = useRef(semesters.map(() => new Animated.Value(0))).current;
+  const animatedValues = useRef([]).current; // Initialize as empty array
 
   const branchIcons = Object.fromEntries(
-    data?.branches?.map(b => [b.name, b.icon]) || [] // Safe access with optional chaining, default to empty array
+    data?.branches?.map(b => [b.name, b.icon]) || []
   );
   const branchIcon = branchIcons[branch] || 'graduation-cap';
 
-  const getBranchColor = () => branchData?.gradientColors || ['#1976D2', '#42a5f5']; // Safe access with optional chaining
+  const getBranchColor = () => data?.branches?.find(b => b.name === branch)?.gradientColors || ['#1976D2', '#42a5f5'];
   const branchColor = getBranchColor();
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.timing(headerAnimation, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.stagger(
-        75,
-        animatedValues.map(anim =>
-          Animated.spring(anim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true })
-        )
-      ),
-    ]).start();
-  }, [headerAnimation, animatedValues]);
+    setLoading(true); // Start loading
+    setError(null); // Clear any previous errors
+    try {
+      const branchData = data?.branches?.find(b => b.name === branch) || {};
+      const semesterData = branchData?.semesters || [];
+      setSemesters(semesterData);
+      animatedValues.current = semesterData.map(() => new Animated.Value(0)); // Initialize animatedValues based on semesters
+      setLoading(false); // Loading finished successfully
+    } catch (processError) {
+      console.error("Error processing semester data:", processError);
+      setError("Failed to load semesters for this branch.");
+      setLoading(false); // Loading finished with error
+      setSemesters([]); // Ensure semesters state is empty in case of error
+    }
+  }, [branch, data]);
+
+
+  useEffect(() => {
+    if (!loading && semesters.length > 0) { // Start animation only when not loading and semesters are available
+      Animated.sequence([
+        Animated.timing(headerAnimation, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.stagger(
+          75,
+          animatedValues.current.map(anim =>
+            Animated.spring(anim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true })
+          )
+        ),
+      ]).start();
+    }
+  }, [headerAnimation, loading, semesters]); // Added loading and semesters to dependency array
 
   const SemesterCard = ({ semester, animatedValue, onPress }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -93,6 +115,25 @@ const SemesterScreen = ({ route, navigation }) => {
     );
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2962FF" />
+        <Text style={styles.loadingText}>Loading semesters...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <FontAwesome5 name="exclamation-circle" size={50} color="#FF3B30" />
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
@@ -136,9 +177,9 @@ const SemesterScreen = ({ route, navigation }) => {
             <SemesterCard
               key={sem.id}
               semester={sem}
-              animatedValue={animatedValues[index]}
+              animatedValue={animatedValues.current[index]}
               onPress={() =>
-                navigation.navigate('Subject', { branch, semester: sem.name, semesterId: sem.id, data: data }) // Pass data here as well if needed in next screen
+                navigation.navigate('Subject', { branch, semester: sem.name, semesterId: sem.id, data: data })
               }
             />
           ))}
@@ -175,12 +216,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: 'rgba(255, 255, 255, 0.9)',
     marginBottom: 4,
-    textAlign: 'left', // Modified to align text to the left
+    textAlign: 'left',
   },
   headerTitleContainer: {
     flexDirection: 'row',
-    alignItems: 'center', // Keep align items center for vertical alignment with icon
-    justifyContent: 'flex-start', // Modified to align content to the start
+    alignItems: 'center',
+    justifyContent: 'flex-start',
     marginBottom: 10,
   },
   headerIcon: {
@@ -190,13 +231,13 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: 'bold',
     color: '#FFFFFF',
-    textAlign: 'left', // Modified to align text to the left
+    textAlign: 'left',
   },
   subtitle: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.8)',
     lineHeight: 22,
-    textAlign: 'left', // Modified to align text to the left
+    textAlign: 'left',
   },
   backButton: {
     position: 'absolute',
@@ -286,6 +327,30 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
     zIndex: 10,
+  },
+  loadingContainer: { // Added loading container style
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f7f9fc',
+  },
+  loadingText: { // Added loading text style
+    marginTop: 15,
+    fontSize: 16,
+    color: '#555',
+  },
+  errorContainer: { // Added error container style
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f7f9fc',
+    padding: 20,
+  },
+  errorText: { // Added error text style
+    marginTop: 15,
+    fontSize: 16,
+    color: '#555',
+    textAlign: 'center',
   },
 });
 

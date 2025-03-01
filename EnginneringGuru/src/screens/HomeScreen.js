@@ -55,6 +55,7 @@ const HomeScreen = ({ navigation }) => {
   }, [animationsReady, animatedValues]);
 
   const fetchData = async () => {
+    setError(null); // Clear any previous errors
     try {
       setLoading(true);
 
@@ -64,16 +65,17 @@ const HomeScreen = ({ navigation }) => {
       if (cachedData) {
         const parsedCacheData = JSON.parse(cachedData);
         setData(parsedCacheData);
-        console.log('Data state in HomeScreen after loading from cache:', parsedCacheData); // ADDED LOG
+        console.log('Data loaded from cache.');
         setLoading(false);
       } else {
         // If no cached data, fetch from remote
         await fetchFromRemote();
       }
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      setError("Failed to load data. Please try again.");
-      setLoading(false);
+    } catch (cacheError) {
+      console.error("Error accessing cache:", cacheError);
+      // If cache fails, attempt to fetch from remote as fallback
+      setError("Error accessing local cache. Trying to fetch data from server...");
+      await fetchFromRemote(); // Attempt to fetch from remote as fallback
     }
   };
 
@@ -81,7 +83,7 @@ const HomeScreen = ({ navigation }) => {
     try {
       const response = await fetch(DATA_URL);
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`Network response was not ok, status code: ${response.status}`);
       }
 
       const fetchedData = await response.json();
@@ -89,11 +91,11 @@ const HomeScreen = ({ navigation }) => {
       // Save to cache
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(fetchedData));
       setData(fetchedData);
-      console.log('Data state in HomeScreen after fetching from remote:', fetchedData); // ADDED LOG
+      console.log('Data fetched from remote and cached.');
       setLoading(false);
-    } catch (err) {
-      console.error("Error fetching remote data:", err);
-      setError("Failed to load data from server. Please check your connection.");
+    } catch (remoteError) {
+      console.error("Error fetching remote data:", remoteError);
+      setError("Failed to load data from server. Please check your connection or try again later.");
       setLoading(false);
     }
   };
@@ -111,8 +113,16 @@ const HomeScreen = ({ navigation }) => {
           text: "Update",
           onPress: async () => {
             setLoading(true);
-            await fetchFromRemote();
-            Alert.alert("Success", "Data has been updated successfully!");
+            setError(null); // Clear error before update attempt
+            try {
+              await fetchFromRemote();
+              Alert.alert("Success", "Data has been updated successfully!");
+            } catch (updateError) {
+              console.error("Error during data update:", updateError);
+              setError("Failed to update data. Please try again.");
+            } finally {
+              setLoading(false);
+            }
           }
         }
       ]
@@ -153,8 +163,7 @@ const HomeScreen = ({ navigation }) => {
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
           onPress={() => {
-            if (data) { // ADDED CONDITIONAL CHECK
-              console.log('Data being passed to SemesterScreen:', data); // ADDED LOG
+            if (data) {
               navigation.navigate('Semester', { branch: branch.name, data: data });
             } else {
               console.warn('Data is not yet loaded, navigation prevented.');
@@ -228,7 +237,7 @@ const HomeScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {data.branches.map((branch, index) => (
+        {data && data.branches && data.branches.map((branch, index) => ( // Safe access data.branches
           <BranchCard
             key={index}
             branch={branch}

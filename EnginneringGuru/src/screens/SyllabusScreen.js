@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   ScrollView,
   TouchableOpacity,
   Animated,
+  ActivityIndicator // Import ActivityIndicator
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome5 } from '@expo/vector-icons';
@@ -14,66 +15,96 @@ import Markdown from 'react-native-markdown-display';
 // Remove this line: import data from '../data/data.json';
 
 const SyllabusScreen = ({ route, navigation }) => {
-  console.log('route.params in SyllabusScreen:', route.params); // ADDED LOG FOR DEBUGGING
-  const { branch, semester, subject, data } = route.params; // Receive 'data' from route.params
-
-  const branchData = data?.branches?.find(b => b.name === branch) || {}; // Use optional chaining
-  const semesterData = branchData?.semesters?.find(s => s.name === semester) || {}; // Use optional chaining
-  const subjectData = semesterData?.subjects?.find(sub => sub.name === subject) || {}; // Use optional chaining
-  const syllabus = subjectData?.syllabus || {}; // Use optional chaining
-
-  const branchIcons = Object.fromEntries(
-    data?.branches?.map(b => [b.name, b.icon]) || [] // Use optional chaining and default to empty array
-  );
-  const branchIcon = branchIcons[branch] || 'graduation-cap';
-  const getBranchColor = () => branchData?.gradientColors || ['#1976D2', '#42a5f5']; // Use optional chaining
-  const branchColor = getBranchColor();
-
-  const allSyllabusSectionsConfig = [
-    { title: 'Course Objectives', icon: 'bullseye', contentKey: 'courseObjectives' },
-    {
-      title: 'Course Content',
-      icon: 'book',
-      contentKey: 'courseContent'
-    },
-    { title: 'Learning Outcomes', icon: 'lightbulb', contentKey: 'learningOutcomes' },
-    { title: 'Reference Books', icon: 'book-open', contentKey: 'referenceBooks' },
-    { title: 'Assessment Methods', icon: 'clipboard-check', contentKey: 'assessmentMethods' },
-  ];
-
-  const syllabusSectionsData = allSyllabusSectionsConfig.filter(sectionConfig => {
-    const content = syllabus?.[sectionConfig.contentKey]; // Use optional chaining
-    if (sectionConfig.contentKey === 'courseContent') {
-      return typeof content === 'string' && content.trim() !== '';
-    } else {
-      return Array.isArray(content) && content.length > 0;
-    }
-  }).map(sectionConfig => ({
-    title: sectionConfig.title,
-    icon: sectionConfig.icon,
-    content: syllabus?.[sectionConfig.contentKey] || (sectionConfig.contentKey === 'courseContent' ? '' : []) // Use optional chaining
-  }));
-
-  const [syllabusSections, setSyllabusSections] = useState(syllabusSectionsData);
+  console.log('route.params in SyllabusScreen:', route.params);
+  const { branch, semester, subject, data } = route.params;
+  const [syllabusSectionsData, setSyllabusSectionsData] = useState([]); // State for syllabus sections data
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState(null); // Error state
+  const [animatedValues, setAnimatedValues] = useState([]); // State for animated values
+  const [subjectData, setSubjectData] = useState(null); // State to hold subjectData
 
   const headerAnimation = useRef(new Animated.Value(0)).current;
-  const animatedValues = useRef(syllabusSections.map(() => new Animated.Value(0))).current;
+
+  const branchIcons = Object.fromEntries(
+    data?.branches?.map(b => [b.name, b.icon]) || []
+  );
+  const branchIcon = branchIcons[branch] || 'graduation-cap';
+  const getBranchColor = () => data?.branches?.find(b => b.name === branch)?.gradientColors || ['#1976D2', '#42a5f5'];
+  const branchColor = getBranchColor();
+
+
+  const processSyllabusData = useCallback(() => { // Use useCallback for memoization
+    setLoading(true); // Start loading
+    setError(null); // Clear any previous errors
+    try {
+      const branchData = data?.branches?.find(b => b.name === branch) || {};
+      const semesterData = branchData?.semesters?.find(s => s.name === semester) || {};
+      const currentSubjectData = semesterData?.subjects?.find(sub => sub.name === subject) || null; // Find and set subjectData
+      setSubjectData(currentSubjectData); // Set subjectData state
+      const syllabus = currentSubjectData?.syllabus || {}; // Use subjectData from state
+
+      const allSyllabusSectionsConfig = [
+        { title: 'Course Objectives', icon: 'bullseye', contentKey: 'courseObjectives' },
+        {
+          title: 'Course Content',
+          icon: 'book',
+          contentKey: 'courseContent'
+        },
+        { title: 'Learning Outcomes', icon: 'lightbulb', contentKey: 'learningOutcomes' },
+        { title: 'Reference Books', icon: 'book-open', contentKey: 'referenceBooks' },
+        { title: 'Assessment Methods', icon: 'clipboard-check', contentKey: 'assessmentMethods' },
+      ];
+
+      const sections = allSyllabusSectionsConfig.filter(sectionConfig => {
+        const content = syllabus?.[sectionConfig.contentKey];
+        if (sectionConfig.contentKey === 'courseContent') {
+          return typeof content === 'string' && content.trim() !== '';
+        } else {
+          return Array.isArray(content) && content.length > 0;
+        }
+      }).map(sectionConfig => ({
+        title: sectionConfig.title,
+        icon: sectionConfig.icon,
+        content: syllabus?.[sectionConfig.contentKey] || (sectionConfig.contentKey === 'courseContent' ? '' : [])
+      }));
+
+      setSyllabusSectionsData(sections);
+      setAnimatedValues(sections.map(() => new Animated.Value(0))); // Initialize animatedValues based on sections
+      setLoading(false); // Loading finished successfully
+
+    } catch (processError) {
+      console.error("Error processing syllabus data:", processError);
+      setError("Failed to load syllabus content.");
+      setLoading(false); // Loading finished with error
+      setSyllabusSectionsData([]); // Ensure syllabusSectionsData is empty on error
+      setAnimatedValues([]); // Ensure animatedValues is empty on error
+      setSubjectData(null); // Ensure subjectData is null on error
+    }
+  }, [branch, semester, subject, data]);
 
   useEffect(() => {
-    Animated.sequence([
-      Animated.timing(headerAnimation, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.stagger(
-        75,
-        animatedValues.map(anim =>
-          Animated.spring(anim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true })
-        )
-      ),
-    ]).start();
-  }, [headerAnimation, animatedValues]);
+    processSyllabusData();
+  }, [processSyllabusData]); // Use useCallback memoized function
+
+
+  useEffect(() => {
+    if (!loading && syllabusSectionsData.length > 0 && animatedValues.length > 0) { // Check animatedValues.length
+      Animated.sequence([
+        Animated.timing(headerAnimation, { toValue: 1, duration: 500, useNativeDriver: true }),
+        Animated.stagger(
+          75,
+          animatedValues.map(anim =>
+            Animated.spring(anim, { toValue: 1, friction: 8, tension: 40, useNativeDriver: true })
+          )
+        ),
+      ]).start();
+    }
+  }, [headerAnimation, loading, syllabusSectionsData, animatedValues]); // Added animatedValues to dependency array
+
 
   const SyllabusSection = React.memo(({ section, branchColor, animatedValue }) => {
     const contentHeight = useRef(new Animated.Value(0)).current;
-    const [isExpanded, setIsExpanded] = useState(true); // Initialize all sections as expanded
+    const [isExpanded, setIsExpanded] = useState(true);
 
     useEffect(() => {
       Animated.timing(contentHeight, {
@@ -156,6 +187,26 @@ const SyllabusScreen = ({ route, navigation }) => {
     return prevProps.section === nextProps.section;
   });
 
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2962FF" />
+        <Text style={styles.loadingText}>Loading syllabus...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <FontAwesome5 name="exclamation-circle" size={50} color="#FF3B30" />
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <Animated.View
@@ -187,8 +238,8 @@ const SyllabusScreen = ({ route, navigation }) => {
               <FontAwesome5 name={branchIcon} size={28} color="#FFFFFF" style={styles.headerIcon} />
               <View>
                 <Text style={styles.headerTitle}>{subject}</Text>
-                {subjectData?.course_code !== null && ( // Use optional chaining
-                  <Text style={styles.courseCode}>Course Code: {subjectData.course_code}</Text> // Use optional chaining
+                {subjectData?.course_code !== null && subjectData?.course_code !== undefined && ( // Safe check for subjectData and course_code
+                  <Text style={styles.courseCode}>Course Code: {subjectData.course_code}</Text>
                 )}
               </View>
             </View>
@@ -198,7 +249,7 @@ const SyllabusScreen = ({ route, navigation }) => {
 
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.sectionsContainer}>
-          {syllabusSections.map((section, index) => (
+          {syllabusSectionsData.map((section, index) => (
             <SyllabusSection
               key={section.title}
               section={section}
@@ -358,6 +409,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
     marginTop: 2,
+  },
+  loadingContainer: { // Added loading container style
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f7f9fc',
+  },
+  loadingText: { // Added loading text style
+    marginTop: 15,
+    fontSize: 16,
+    color: '#555',
+  },
+  errorContainer: { // Added error container style
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f7f9fc',
+    padding: 20,
+  },
+  errorText: { // Added error text style
+    marginTop: 15,
+    fontSize: 16,
+    color: '#555',
+    textAlign: 'center',
   },
 });
 
